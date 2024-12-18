@@ -5,6 +5,8 @@
 #include "custombutton.h"
 #include "notepad.h"
 #include "animation.h"
+#include "paint.h"
+
 
 class MainMenuPanel : public wxPanel {
 public:
@@ -98,10 +100,14 @@ private:
             dc.DrawBitmap(wxBitmap(scaledImage), x, y, false);
         }
     }
+void OnPaintClicked(wxCommandEvent& event) {
+  MyFrame *paintFrame = new MyFrame("Paint Application", wxDefaultPosition, wxSize(800, 600));
 
-    void OnPaintClicked(wxCommandEvent& event) {
-        wxMessageBox("Paint button clicked", "Info", wxOK | wxICON_INFORMATION);
-    }
+    paintFrame->Show(true);
+    paintFrame->Raise();
+    this->Hide();
+}
+
 
     void OnNotePadClicked(wxCommandEvent& event) {
         NotepadFrame* notepadFrame = new NotepadFrame(this);
