@@ -7,7 +7,11 @@ public:
         : x(x), y(y), width(100), height(100), isDragging(false), isResizing(false), isSelected(false) {
 
         wxImage image;
-        if (image.LoadFile(filePath, wxBITMAP_TYPE_JPEG)) {
+        if (image.LoadFile(filePath, wxBITMAP_TYPE_PNG)) {
+            // Ensure the image has an alpha channel (for PNGs with transparency)
+            if (!image.HasAlpha()) {
+                image.InitAlpha();
+            }
             originalBitmap = wxBitmap(image);
             spriteBitmap = wxBitmap(image.Scale(width, height, wxIMAGE_QUALITY_HIGH));
         } else {
@@ -15,13 +19,12 @@ public:
         }
     }
 
-
     void Draw(wxDC& dc) {
         if (spriteBitmap.IsOk()) {
+            // Draw the sprite bitmap with transparency
             dc.DrawBitmap(spriteBitmap, x, y, true);
 
             if (isSelected) {
-
                 dc.SetPen(*wxRED_PEN);
                 dc.SetBrush(*wxTRANSPARENT_BRUSH);
                 dc.DrawRectangle(x, y, width, height);
@@ -29,8 +32,7 @@ public:
         }
     }
 
-
-    bool Contains(int mouseX, int mouseY) {
+    bool Contains(int mouseX, int mouseY) const {
         return (mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height);
     }
 
@@ -60,7 +62,6 @@ public:
     }
 
     void StartResizing(int mouseX, int mouseY) {
-
         if (mouseX >= x + width - 10 && mouseY >= y + height - 10) {
             isResizing = true;
         }
@@ -75,8 +76,12 @@ public:
             width = mouseX - x;
             height = mouseY - y;
 
-
-            spriteBitmap = wxBitmap(originalBitmap.ConvertToImage().Scale(width, height, wxIMAGE_QUALITY_HIGH));
+            // When scaling, ensure the alpha channel is preserved
+            wxImage scaledImage = originalBitmap.ConvertToImage().Scale(width, height, wxIMAGE_QUALITY_HIGH);
+            if (!scaledImage.HasAlpha()) {
+                scaledImage.InitAlpha();  // Reinitialize alpha if needed
+            }
+            spriteBitmap = wxBitmap(scaledImage);
         }
     }
 
