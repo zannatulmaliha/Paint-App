@@ -8,7 +8,7 @@ public:
 
         wxImage image;
         if (image.LoadFile(filePath, wxBITMAP_TYPE_PNG)) {
-            // Ensure the image has an alpha channel (for PNGs with transparency)
+         
             if (!image.HasAlpha()) {
                 image.InitAlpha();
             }
@@ -21,7 +21,7 @@ public:
 
     void Draw(wxDC& dc) {
         if (spriteBitmap.IsOk()) {
-            // Draw the sprite bitmap with transparency
+           
             dc.DrawBitmap(spriteBitmap, x, y, true);
 
             if (isSelected) {
