@@ -8,7 +8,11 @@ enum class PenType
     SOLID,
     DASHED,
     DOTTED,
-    BRUSH
+    BRUSH,
+
+    CUSTOM_DASH,    // New
+    THICK_RED_LINE, // New
+    STIPPLED        // New
 };
 
 class PenManager
