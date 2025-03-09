@@ -1,11 +1,12 @@
 #include <wx/wx.h>
 #include <wx/sound.h>
 #include <wx/image.h>
-#include <wx/statbmp.h>
+
 #include "custombutton.h"
 #include "notepad.h"
 #include "animation.h"
 #include "paint.h"
+
 
 
 class MainMenuPanel : public wxPanel {
@@ -105,7 +106,7 @@ void OnPaintClicked(wxCommandEvent& event) {
 
     paintFrame->Show(true);
     paintFrame->Raise();
-    this->Hide();
+   this->Hide();
 }
 
 
@@ -139,7 +140,7 @@ public:
 class MyApp : public wxApp {
 public:
     virtual bool OnInit() {
-         wxInitAllImageHandlers();
+        wxInitAllImageHandlers();
         MainFrame* frame = new MainFrame();
         frame->Show(true);
         return true;
