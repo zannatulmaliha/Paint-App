@@ -1,8 +1,8 @@
 #include <wx/wx.h>
 #include <wx/dcbuffer.h>
+#include <vector>
 #include "sprite.h"
 #include "custombutton2.h"
-#include <vector>
 
 class AnimationCanvas : public wxPanel {
 public:
@@ -34,12 +34,20 @@ public:
         Bind(wxEVT_MOTION, &AnimationCanvas::OnMouseMove, this);
         Bind(wxEVT_ERASE_BACKGROUND, [](wxEraseEvent&) {});
         Bind(wxEVT_SIZE, &AnimationCanvas::OnResize, this);
+
+        // Initialize the animation timer
+        animationTimer = new wxTimer(this);
+        Bind(wxEVT_TIMER, &AnimationCanvas::OnAnimationTimer, this);
+
+        // Initialize the animation index
+        animationIndex = 0;
     }
 
     ~AnimationCanvas() {
         for (auto sprite : sprites) {
             delete sprite;
         }
+        delete animationTimer; // Delete the timer
     }
 
 private:
@@ -54,6 +62,10 @@ private:
     bool drawingPath;
     bool pathMode;
     std::vector<wxPoint> drawnPath;
+
+    // Timer for animation
+    wxTimer* animationTimer;
+    size_t animationIndex;
 
     void OnResize(wxSizeEvent& event) {
         wxSize size = GetClientSize();
@@ -83,11 +95,9 @@ private:
 
     void OnPlayClicked(wxCommandEvent& event) {
         if (selectedSprite && !drawnPath.empty()) {
-            // Animate the sprite along the path
+
             AnimateSprite();
 
-            // Clear the path after animation starts
-            drawnPath.clear();
         } else {
             wxLogMessage("No path is drawn or sprite is selected.");
         }
@@ -95,12 +105,19 @@ private:
 
     void AnimateSprite() {
         if (!selectedSprite || drawnPath.empty()) return;
+        animationIndex = 0; // Start from the first point
+        animationTimer->Start(30); // Trigger every 30 milliseconds (adjust as needed)
+    }
 
-        // Animate the sprite along the drawn path
-        for (const auto& point : drawnPath) {
+    void OnAnimationTimer(wxTimerEvent& event) {
+        if (animationIndex < drawnPath.size()) {
+            const auto& point = drawnPath[animationIndex++];
             selectedSprite->MoveTo(point.x, point.y);
             Refresh();
-            wxMilliSleep(100);  // Pause to simulate animation
+        } else {
+            animationTimer->Stop(); // Stop the timer when done
+            drawnPath.clear(); // Clear the path after animation
+
         }
     }
 
@@ -110,8 +127,12 @@ private:
     void OnStarSelected(wxCommandEvent& event) { wxLogMessage("Star selected!"); }
 
     void OnPathClicked(wxCommandEvent& event) {
-        pathMode = true;
-        wxLogMessage("Click to draw a path for the sprite.");
+        pathMode = !pathMode;
+        if (pathMode) {
+            wxLogMessage("Path drawing mode enabled. Click and drag to draw a path.");
+        } else {
+            wxLogMessage("Path drawing mode disabled.");
+        }
     }
 
     void OnAddSpriteClicked(wxCommandEvent& event) {
@@ -128,17 +149,21 @@ private:
     }
 
     void OnAddFoxSprite(wxCommandEvent& event) {
-        sprites.push_back(new Sprite("fox.jpg", 50, 100));
+        Sprite* newSprite = new Sprite("micky.png", 50, 100);  // Update the path as needed
+        sprites.push_back(newSprite);
         Refresh();
     }
 
     void OnAddCasperSprite(wxCommandEvent& event) {
-        sprites.push_back(new Sprite("casper.jpg", 52, 100));
+        Sprite* newSprite = new Sprite("micky.png", 100, 100);
+        sprites.push_back(newSprite);
         Refresh();
     }
 
     void OnAddCloudSprite(wxCommandEvent& event) {
-        sprites.push_back(new Sprite("cloud.jpg", 53, 100));
+        Sprite* newSprite = new Sprite("micky.png", 150, 100);
+        sprites.push_back(newSprite);
+
         Refresh();
     }
 
@@ -151,13 +176,14 @@ private:
         wxBufferedPaintDC dc(this);
         dc.Clear();
 
+        // Draw the sprite images
         for (auto sprite : sprites) {
             sprite->Draw(dc);
         }
 
         // Draw the path, if it exists
-        if (drawingPath && !drawnPath.empty()) {
-            dc.SetPen(wxPen(wxColour(0, 0, 255), 2));
+        if ((drawingPath || !drawnPath.empty()) && pathMode) {
+            dc.SetPen(wxPen(wxColour(0, 0, 255), 2));  // Blue color for path
             for (size_t i = 1; i < drawnPath.size(); ++i) {
                 dc.DrawLine(drawnPath[i - 1], drawnPath[i]);
             }
@@ -169,53 +195,64 @@ private:
         int mouseY = event.GetY();
 
         if (pathMode) {
-            drawnPath.clear();  // Clear any previous path
+            // Start a new path
+            drawnPath.clear();  // Clear any old path when starting a new one
             drawingPath = true;
             drawnPath.push_back(wxPoint(mouseX, mouseY));
+            wxLogMessage("Started drawing path at (%d, %d)", mouseX, mouseY);
+            Refresh();  // Refresh to show path immediately
         } else {
+            // Regular sprite selection logic
+            selectedSprite = nullptr; // Reset selected sprite
             for (auto sprite : sprites) {
                 if (sprite->Contains(mouseX, mouseY)) {
                     selectedSprite = sprite;
                     sprite->SetSelected(true);
-
                     sprite->StartResizing(mouseX, mouseY);
                     if (!sprite->IsResizing()) {
                         sprite->StartDragging(mouseX, mouseY);
                     }
+                    wxLogMessage("Sprite selected.");
+                    break; // Exit loop once sprite is found
                 } else {
                     sprite->SetSelected(false);
                 }
             }
+            if (!selectedSprite) {
+                wxLogMessage("No sprite selected.");
+            }
+            Refresh();
         }
-        Refresh();
     }
 
     void OnMouseLeftUp(wxMouseEvent& event) {
+        if (drawingPath && pathMode) {
+            drawingPath = false;  // Stop drawing the path
+            wxLogMessage("Finished drawing path. Total points: %lu", drawnPath.size());
+        }
+
         if (selectedSprite) {
             selectedSprite->StopDragging();
             selectedSprite->StopResizing();
             selectedSprite = nullptr;
         }
-        drawingPath = false;  // Stop drawing the path
     }
 
     void OnMouseMove(wxMouseEvent& event) {
-        if (event.Dragging() && selectedSprite) {
-            int mouseX = event.GetX();
-            int mouseY = event.GetY();
+        int mouseX = event.GetX();
+        int mouseY = event.GetY();
 
+        if (drawingPath && pathMode) {
+            drawnPath.push_back(wxPoint(mouseX, mouseY));  // Record path
+            Refresh();  // Refresh to update the path drawing
+        }
+
+        if (event.Dragging() && selectedSprite) {
             if (selectedSprite->IsResizing()) {
                 selectedSprite->Resize(mouseX, mouseY);
             } else {
                 selectedSprite->MoveTo(mouseX, mouseY);
             }
-            Refresh();
-        }
-
-        if (drawingPath && pathMode) {
-            int mouseX = event.GetX();
-            int mouseY = event.GetY();
-            drawnPath.push_back(wxPoint(mouseX, mouseY));
             Refresh();
         }
     }
