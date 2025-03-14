@@ -37,13 +37,6 @@ wxPen PenManager::GetPen(PenType type)
         pen.SetColour(*wxRED);
         pen.SetWidth(10);
         break;
-        // case PenType::STIPPLED:
-        // {
-        //     pen.SetStyle(wxPENSTYLE_TRANSPARENT);
-        //     pen.SetColour(*wxRED);
-        //     pen.SetWidth(10);
-        //     break;
-        // }
 
     default:
         pen.SetStyle(wxPENSTYLE_DOT);

@@ -13,8 +13,15 @@ endif()
 set(wxWidgets_USE_STATIC 1)
 
 find_package(wxWidgets REQUIRED)
+#find_package(wxWidgets REQUIRED COMPONENTS core base richtext)
 
+#set(SRCS mymain.cpp drawingcanvas.cpp PenManager.cpp PenSizePanel.cpp Eraser.cpp ShapeToolbar.cpp ShapeDrawer.cpp ShapeChecker.cpp)
+#set(SRCS main.cpp)
 set(SRCS main.cpp drawingcanvas.cpp PenManager.cpp PenSizePanel.cpp Eraser.cpp ShapeToolbar.cpp ShapeDrawer.cpp ShapeChecker.cpp)
+
+
+
+
 
 include(${wxWidgets_USE_FILE})
 
@@ -32,3 +39,9 @@ else()
 endif()
 
 target_link_libraries(main PRIVATE ${wxWidgets_LIBRARIES})
+
+
+#target_link_libraries(wx_cmake_template_core PRIVATE wxmsw32u_richtext)
+
+#target_link_libraries(wx_cmake_template_core wxrichtext wxcore wxbase)
+

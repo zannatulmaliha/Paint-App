@@ -18,6 +18,8 @@ public:
     void DrawEllipse(const wxPoint &startPoint, const wxPoint &endPoint);
     void DrawStar(const wxPoint &startPoint, const wxPoint &endPoint);
 
+    void CaptureAndSave(wxBitmap &bitmap);
+
 private:
     wxDC &dc;
     wxPen pen;

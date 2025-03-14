@@ -10,6 +10,7 @@ ShapeDrawer::ShapeDrawer(wxDC &dc, const wxColour &penColor, int penSize, const 
 {
 
     // pen(penType);
+
     pen.SetColour(penColor);
     pen.SetWidth(penSize);
     wxPenStyle style;
@@ -42,10 +43,20 @@ ShapeDrawer::ShapeDrawer(wxDC &dc, const wxColour &penColor, int penSize, const 
 
 void ShapeDrawer::DrawSquare(const wxPoint &startPoint, const wxPoint &endPoint, const wxColour &fillcolor)
 {
+    // wxColour currentColor = dc.GetPen().GetColour();
+    // wxLogMessage("Current Pen Color: R=%d, G=%d, B=%d",
+    //              currentColor.Red(), currentColor.Green(), currentColor.Blue());
+
+    // wxLog::FlushActive();
     wxCoord width = abs(endPoint.x - startPoint.x);
     wxCoord height = abs(endPoint.y - startPoint.y);
     wxCoord size = std::min(width, height);
     dc.DrawRectangle(startPoint.x, startPoint.y, size, size);
+    wxColour afterColor = dc.GetPen().GetColour();
+    // wxLogMessage("After Drawing - Pen Color: R=%d, G=%d, B=%d",
+    //              afterColor.Red(), afterColor.Green(), afterColor.Blue());
+
+    // wxLog::FlushActive(); // Ensure logs are printed immediately
 }
 
 void ShapeDrawer::DrawCircle(const wxPoint &startPoint, const wxPoint &endPoint)
@@ -120,4 +131,26 @@ void ShapeDrawer::DrawStar(const wxPoint &startPoint, const wxPoint &endPoint)
     // Draw the star
 
     dc.DrawPolygon(points.size(), points.data());
+}
+
+void ShapeDrawer::CaptureAndSave(wxBitmap &bitmap)
+{
+    wxMemoryDC memDC;
+    memDC.SelectObject(bitmap); // Associate memory DC with the bitmap
+
+    wxPen currentPen = dc.GetPen(); // Get the current pen from the main DC
+    memDC.SetPen(currentPen);       // Apply it to the memory DC
+    memDC.SetBrush(*wxTRANSPARENT_BRUSH);
+
+    // Verify the pen color in the saving function
+    wxLogMessage("Saving - Pen Color: R=%d, G=%d, B=%d",
+                 memDC.GetPen().GetColour().Red(),
+                 memDC.GetPen().GetColour().Green(),
+                 memDC.GetPen().GetColour().Blue());
+
+    // Now draw the shapes onto the memory DC
+    memDC.DrawRectangle(50, 50, 100, 100); // Example drawing
+
+    memDC.SelectObject(wxNullBitmap); // Unselect before saving
+    bitmap.SaveFile("drawing.png", wxBITMAP_TYPE_PNG);
 }

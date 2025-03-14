@@ -24,6 +24,7 @@ public:
     int GetPenSize();
     bool shapestatus(bool status);
     void SelectedShape(wxString shape);
+    void OnPaint(wxPaintEvent &);
 
     // void eraserActive(bool eraserToolActive);
     //  void setdefaultcursor();
@@ -36,9 +37,20 @@ public:
 
     void enablesquiggle(bool active);
 
+    void OnTimer(wxTimerEvent &event); // Timer function
+
+    void StartAnimation(); // Function to start the animation
+
+    void OnCaptureScreenshot(wxCommandEvent &event);
+
 private:
     // wxColour newcolor = *wxBlack;
     // wxColour newcolor = wxColour(*wxBLACK);
+    wxTimer m_timer;
+    size_t animationIndex = 0; // Tracks how many points are drawn
+    bool isAnimating = false;  // Flag to check if animation is running
+
+    wxDECLARE_EVENT_TABLE();
 
     bool undo = false, squiggle = false;
 
@@ -78,7 +90,7 @@ private:
     // for eraser to work inside of shape or erase fillcolor usually make shape={} not shapes
     std::vector<ShapeData> shapes = {}, shapeCopy;
 
-    void OnPaint(wxPaintEvent &);
+    // void OnPaint(wxPaintEvent &);
     void OnMouseDown(wxMouseEvent &);
     void OnMouseMove(wxMouseEvent &);
     void OnMouseUp(wxMouseEvent &);

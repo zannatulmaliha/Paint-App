@@ -5,8 +5,13 @@
 #include <stack>
 #include "ShapeChecker.h"
 
-DrawingCanvas::DrawingCanvas(wxWindow *parent, wxWindowID id, const wxPoint &pos, const wxSize &size)
-    : wxWindow(parent, id, pos, size), penSize(5), eraserTool(nullptr), eraserToolActive(false), shapeactive(true)
+wxBEGIN_EVENT_TABLE(DrawingCanvas, wxPanel)
+    EVT_PAINT(DrawingCanvas::OnPaint)
+        EVT_TIMER(wxID_ANY, DrawingCanvas::OnTimer)
+            wxEND_EVENT_TABLE()
+
+                DrawingCanvas::DrawingCanvas(wxWindow *parent, wxWindowID id, const wxPoint &pos, const wxSize &size)
+    : wxWindow(parent, id, pos, size), penSize(5), eraserTool(nullptr), eraserToolActive(false), shapeactive(true), m_timer(this)
 {
     this->SetBackgroundStyle(wxBG_STYLE_PAINT);
     this->SetBackgroundColour(wxSystemSettings::GetAppearance().IsDark() ? *wxWHITE : *wxBLACK);
@@ -20,18 +25,14 @@ DrawingCanvas::DrawingCanvas(wxWindow *parent, wxWindowID id, const wxPoint &pos
     BuildContextMenu();
 
     this->Bind(wxEVT_CONTEXT_MENU, &DrawingCanvas::OnContextMenuEvent, this);
+
+    this->Bind(wxEVT_PAINT, &DrawingCanvas::OnPaint, this);
+    this->Bind(wxEVT_TIMER, &DrawingCanvas::OnTimer, this);
 }
 
 void DrawingCanvas::OnPaint(wxPaintEvent &)
 {
     wxAutoBufferedPaintDC dc(this);
-    // if (drawOrder.empty())
-    //     return;
-    // if (squiggles.empty())
-    //     return;
-    // wxPaintDC dc(this);
-
-    // wxAutoBufferedPaintDC dc(this);
 
     dc.Clear();
 
@@ -39,12 +40,11 @@ void DrawingCanvas::OnPaint(wxPaintEvent &)
 
     if (gc)
     {
+
         for (const auto &record : drawOrder)
         {
-
             if (!squiggles.empty() && record.type == DrawRecord::Squiggle)
             {
-
                 const auto &squiggle = squiggles[record.index];
                 wxPen pen = squiggle.penType;
                 if (squiggle.isEraser == true)
@@ -58,7 +58,6 @@ void DrawingCanvas::OnPaint(wxPaintEvent &)
                 }
                 pen.SetWidth(squiggle.Size);
                 gc->SetPen(pen);
-
                 if (squiggle.points.size() > 1)
                 {
                     gc->StrokeLines(squiggle.points.size(), squiggle.points.data());
@@ -96,17 +95,20 @@ void DrawingCanvas::OnPaint(wxPaintEvent &)
                     drawer.DrawStar(shape.startPoint, shape.endPoint);
                 }
             }
-        }
 
-        // this->SetBackgroundColour(newcolor);
+            // wxMilliSleep(1000);
+
+            // count++; // Increase the animation index
+        }
+        // wxMilliSleep(100);
+        //  this->SetBackgroundColour(newcolor);
+
         delete gc;
     }
-    // this->SetBackgroundColour(newcolor);
 }
 
 void DrawingCanvas::OnMouseDown(wxMouseEvent &event)
 {
-
     if (fillshape == true)
     {
         // wxLogMessage("inside fillshape");
@@ -183,65 +185,30 @@ void DrawingCanvas::OnMouseDown(wxMouseEvent &event)
 
 void DrawingCanvas::OnMouseMove(wxMouseEvent &event)
 {
-
     if (isDrawing && shapeactive == false)
     {
-        // wxLogMessage("squiggle");
-
         if (squiggles.empty())
         {
-            // No squiggle to update; return early.
             return;
         }
         auto pt = event.GetPosition();
         auto &currentSquiggle = squiggles.back().points;
         currentSquiggle.push_back(pt);
-
-        // if (currentSquiggle.size() == 1)
-        // {
-        //     if (!squiggles.empty())
-        //     {
-        //         wxLogMessage("After pop_back: squiggles size = %zu", squiggles.size());
-        //         squiggles.pop_back();
-        //         // wxLogMessage("After pop_back: squiggles size = %zu", squiggles.size());
-        //     }
-        //     // squiggles.pop_back();
-        //     if (!drawOrder.empty())
-        //         drawOrder.pop_back();
-        // }
-
         Refresh();
-        //    enablesquiggle(false);
     }
 
     else if (shapeactive == true && event.Dragging())
     {
-        // wxLogMessage("shape");
-        // shapeEndPoint = event.GetPosition();
-
-        // Update the last shape's endPoint in the container
         if (!shapes.empty())
         {
             shapeEndPoint = event.GetPosition();
-
             shapes.back().endPoint = shapeEndPoint;
         }
-        // wxLogMessage("shape");
     }
 }
 
 void DrawingCanvas::OnMouseUp(wxMouseEvent &)
 {
-
-    // wxColour currentBGColor = this->GetBackgroundColour();
-
-    // if (!undoStack.empty() && undoStack.back().backgroundColor != currentBGColor)
-    // {
-    //     // Only push the background color change if it differs from the previous one
-    //     undoStack.push_back({drawOrder, currentBGColor, true});
-    // }
-    // else
-    //     undoStack.push_back({drawOrder, this->GetBackgroundColour(), false});
 
     isDrawing = false;
     if (!shapeactive) // squiggle drawing mode
@@ -251,13 +218,6 @@ void DrawingCanvas::OnMouseUp(wxMouseEvent &)
             // Decide if this squiggle was accidental.
             // Option 1: Check if only one point was recorded.
             bool accidental = (squiggles.back().points.size() <= 1);
-
-            // Option 2: Or check if the distance moved is below a threshold.
-            // For example, if the distance between the first and last point is less than 5 pixels:
-            // auto &pts = squiggles.back().points;
-            // double dx = pts.back().x - pts.front().x;
-            // double dy = pts.back().y - pts.front().y;
-            // bool accidental = (sqrt(dx*dx + dy*dy) < 5);
 
             if (accidental)
             {
@@ -274,9 +234,7 @@ void DrawingCanvas::OnMouseUp(wxMouseEvent &)
 
     else if ((shapeactive == true) && (!shapes.empty()))
     {
-        // wxAutoBufferedPaintDC dc(this);
 
-        // wxAutoBufferedPaintDC dc(this);
         wxClientDC dc(this); // Create a device context to draw on the canvas
                              // ShapeDrawer drawer(dc, penColor, penSize, penColor); // here also i added pencolor due to fillcolor
 
@@ -315,15 +273,11 @@ void DrawingCanvas::OnMouseUp(wxMouseEvent &)
 
         // shapeactive = false;
     }
-    //  wxLogMessage("size:%zu", drawOrder.size());
 }
 
 void DrawingCanvas::OnMouseLeave(wxMouseEvent &)
 {
-    // wxLogMessage("size:%zu", drawOrder.size());
-
     isDrawing = false;
-    // shapeactive = false;
 }
 
 void DrawingCanvas::BuildContextMenu()
@@ -354,7 +308,7 @@ void DrawingCanvas::OnContextMenuEvent(wxContextMenuEvent &e)
 
 void DrawingCanvas::SetPenColor(const wxColour &color)
 {
-    // wxLogMessage("Erasercolor is active, handling mouse move.");
+
     penColor = color; // Update the pen color
                       // Refresh();
 }
@@ -460,4 +414,69 @@ void DrawingCanvas::Redo()
 void DrawingCanvas::enablesquiggle(bool active)
 {
     squiggle = active;
+}
+
+void DrawingCanvas::OnTimer(wxTimerEvent &)
+{
+    if (animationIndex < squiggles[0].points.size()) // Change 0 to track multiple squiggles
+    {
+        animationIndex++; // Reveal next point
+        Refresh();        // Redraw canvas
+    }
+    else
+    {
+        m_timer.Stop(); // Stop animation when finished
+        isAnimating = false;
+    }
+}
+
+void DrawingCanvas::StartAnimation()
+{
+    animationIndex = 0;
+    isAnimating = true;
+    m_timer.Start(50); // Adjust speed (lower = faster)
+    // wxLogMessage("Animation started");
+}
+
+void DrawingCanvas::OnCaptureScreenshot(wxCommandEvent &event)
+{
+
+    // Open a file dialog for the user to choose the save location and format
+    wxFileDialog saveFileDialog(
+        this,
+        "Save Screenshot",
+        "", "",
+        "PNG files (*.png)|*.png|JPEG files (*.jpg)|*.jpg|Bitmap files (*.bmp)|*.bmp",
+        wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+
+    // If the user cancels, exit the function
+    if (saveFileDialog.ShowModal() == wxID_CANCEL)
+        return;
+
+    // Get the file path chosen by the user
+    wxString filePath = saveFileDialog.GetPath();
+
+    // Get window size
+    wxSize size = this->GetSize();
+
+    // Create a bitmap to hold the screenshot
+    wxBitmap screenshotBitmap(size.x, size.y);
+
+    // Create a wxScreenDC to capture the visible screen
+    wxScreenDC screenDC;
+
+    // Create a memory DC and select the bitmap
+    wxMemoryDC memoryDC(screenshotBitmap);
+
+    // Copy the content of the window to the memory DC
+    memoryDC.Blit(0, 0, size.x, size.y, &screenDC, this->GetScreenPosition().x, this->GetScreenPosition().y);
+
+    // Deselect the bitmap
+    memoryDC.SelectObject(wxNullBitmap);
+
+    // Save the screenshot
+    // screenshotBitmap.SaveFile("drawing.png", wxBITMAP_TYPE_PNG);
+
+    screenshotBitmap.SaveFile(filePath, wxBITMAP_TYPE_PNG); // Auto-detects format if needed
+    wxMessageBox("Screenshot saved as drawing.png", "Info", wxOK | wxICON_INFORMATION);
 }

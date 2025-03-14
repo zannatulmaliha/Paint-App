@@ -30,3 +30,50 @@ ExternalProject_Add(${PROJECT_NAME}_core
   INSTALL_COMMAND
   ""
 )
+
+
+add_subdirectory(front_page)
+add_subdirectory(src)
+
+add_subdirectory(friend_feature)
+
+
+
+
+
+
+# Add Friend's Feature
+ExternalProject_Add(${PROJECT_NAME}_friend
+  DEPENDS
+  wxWidgets_external
+  SOURCE_DIR
+  ${CMAKE_CURRENT_SOURCE_DIR}/friend_feature
+  CMAKE_ARGS
+  -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+  -DwxWidgets_ROOT_DIR=${wxWidgets_ROOT_DIR}
+  -DENV_WX_CONFIG=${ENV_WX_CONFIG}
+  CMAKE_CACHE_ARGS
+  -DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH}
+  BUILD_ALWAYS
+  1
+  INSTALL_COMMAND
+  ""
+)
+
+# Add Front Page UI
+ExternalProject_Add(${PROJECT_NAME}_front_page
+  DEPENDS
+  wxWidgets_external
+  SOURCE_DIR
+  ${CMAKE_CURRENT_SOURCE_DIR}/front_page
+  CMAKE_ARGS
+  -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+  -DwxWidgets_ROOT_DIR=${wxWidgets_ROOT_DIR}
+  -DENV_WX_CONFIG=${ENV_WX_CONFIG}
+  CMAKE_CACHE_ARGS
+  -DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH}
+  BUILD_ALWAYS
+  1
+  INSTALL_COMMAND
+  ""
+)
